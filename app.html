@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>
+        TSA Interactive Dashboard
+    </title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Arial, sans-serif;
+        }
+
+        body{
+            background:#f4f6f9;
+            color:#222;
+        }
+
+        .container{
+            width:95%;
+            margin:auto;
+            padding:20px;
+        }
+
+        .header{
+            text-align:center;
+            margin-bottom:40px;
+        }
+
+        .header h1{
+            font-size:42px;
+            margin-bottom:10px;
+        }
+
+        .header p{
+            color:#666;
+            font-size:18px;
+        }
+
+        .controls{
+            display:flex;
+            justify-content:center;
+            margin-bottom:30px;
+        }
+
+        select{
+            padding:12px 18px;
+            border:none;
+            border-radius:10px;
+            font-size:16px;
+            background:white;
+            box-shadow:0 2px 8px rgba(0,0,0,0.1);
+            cursor:pointer;
+        }
+
+        .grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fit,minmax(450px,1fr));
+            gap:25px;
+        }
+
+        .card{
+            background:white;
+            border-radius:18px;
+            padding:20px;
+            box-shadow:0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .card h2{
+            margin-bottom:20px;
+        }
+
+        canvas{
+            width:100% !important;
+            height:400px !important;
+        }
+
+        img{
+            width:100%;
+            border-radius:12px;
+        }
+
+        .footer{
+            margin-top:40px;
+            text-align:center;
+            color:#777;
+            padding-bottom:20px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+
+    <div class="header">
+
+        <h1>
+            Time Series Analysis Dashboard
+        </h1>
+
+        <p>
+            Forecasting and Portfolio Optimization using NSE Stock Data
+        </p>
+
+    </div>
+
+    <!-- DROPDOWN -->
+
+    <div class="controls">
+
+        <select id="stockSelector">
+
+            <option value="HDFC">
+                HDFC Bank
+            </option>
+
+            <option value="ICICI">
+                ICICI Bank
+            </option>
+
+            <option value="TCS">
+                TCS
+            </option>
+
+            <option value="INFY">
+                Infosys
+            </option>
+
+            <option value="SUNPHARMA">
+                Sun Pharma
+            </option>
+
+            <option value="ITC">
+                ITC
+            </option>
+
+            <option value="MARUTI">
+                Maruti Suzuki
+            </option>
+
+            <option value="RELIANCE">
+                Reliance
+            </option>
+
+        </select>
+
+    </div>
+
+    <!-- DASHBOARD -->
+
+    <div class="grid">
+
+        <!-- FORECAST -->
+
+        <div class="card">
+
+            <h2>
+                Forecast vs Actual Prices
+            </h2>
+
+            <canvas id="forecastChart"></canvas>
+
+        </div>
+
+        <!-- PORTFOLIO -->
+
+        <div class="card">
+
+            <h2>
+                Portfolio Allocation
+            </h2>
+
+            <canvas id="portfolioChart"></canvas>
+
+        </div>
+
+        <!-- VOLATILITY -->
+
+        <div class="card">
+
+            <h2>
+                Volatility Comparison
+            </h2>
+
+            <canvas id="volatilityChart"></canvas>
+
+        </div>
+
+        <!-- RMSE -->
+
+        <div class="card">
+
+            <h2>
+                ARIMA RMSE Comparison
+            </h2>
+
+            <canvas id="rmseChart"></canvas>
+
+        </div>
+
+        <!-- SECTOR -->
+
+        <div class="card">
+
+            <h2>
+                Sector Allocation
+            </h2>
+
+            <canvas id="sectorChart"></canvas>
+
+        </div>
+
+        <!-- HEATMAP -->
+
+        <div class="card">
+
+            <h2>
+                Correlation Heatmap
+            </h2>
+
+            <img
+                src="correlation_matrix.png"
+                alt="Correlation Heatmap"
+            >
+
+        </div>
+
+    </div>
+
+    <div class="footer">
+
+        <p>
+            Developed for Time Series Analysis 2026 Capstone Project
+        </p>
+
+    </div>
+
+</div>
+
+<script>
+
+    // -------------------------------------------------
+    // FORECAST DATA
+    // -------------------------------------------------
+
+    const forecastData = {
+
+        HDFC:{
+            actual:[1580,1595,1602,1615,1622,1630,1645,1650],
+            predicted:[1578,1590,1600,1610,1618,1628,1640,1648]
+        },
+
+        ICICI:{
+            actual:[1180,1192,1200,1210,1225,1235,1242,1250],
+            predicted:[1175,1188,1198,1208,1220,1230,1238,1245]
+        },
+
+        TCS:{
+            actual:[3720,3735,3750,3765,3780,3795,3810,3825],
+            predicted:[3710,3728,3745,3760,3772,3788,3800,3815]
+        },
+
+        INFY:{
+            actual:[1490,1500,1515,1522,1530,1542,1550,1560],
+            predicted:[1485,1498,1510,1518,1528,1535,1545,1555]
+        },
+
+        SUNPHARMA:{
+            actual:[980,990,995,1005,1015,1025,1030,1040],
+            predicted:[975,988,992,1000,1010,1020,1028,1035]
+        },
+
+        ITC:{
+            actual:[420,425,430,432,435,438,440,445],
+            predicted:[418,423,428,430,433,436,438,442]
+        },
+
+        MARUTI:{
+            actual:[11200,11250,11320,11380,11420,11490,11530,11600],
+            predicted:[11180,11230,11300,11350,11400,11470,11510,11580]
+        },
+
+        RELIANCE:{
+            actual:[2870,2885,2900,2912,2920,2935,2950,2960],
+            predicted:[2860,2878,2892,2905,2915,2928,2940,2950]
+        }
+
+    };
+
+    // -------------------------------------------------
+    // FORECAST CHART
+    // -------------------------------------------------
+
+    const ctx = document
+        .getElementById('forecastChart')
+        .getContext('2d');
+
+    let forecastChart = new Chart(ctx, {
+
+        type:'line',
+
+        data:{
+
+            labels:[
+                'Day 1',
+                'Day 2',
+                'Day 3',
+                'Day 4',
+                'Day 5',
+                'Day 6',
+                'Day 7',
+                'Day 8'
+            ],
+
+            datasets:[
+
+                {
+                    label:'Actual',
+
+                    data:forecastData.HDFC.actual,
+
+                    borderColor:'#2563eb',
+
+                    backgroundColor:'rgba(37,99,235,0.2)',
+
+                    borderWidth:3,
+
+                    tension:0.3
+                },
+
+                {
+                    label:'Predicted',
+
+                    data:forecastData.HDFC.predicted,
+
+                    borderColor:'#dc2626',
+
+                    backgroundColor:'rgba(220,38,38,0.2)',
+
+                    borderWidth:3,
+
+                    borderDash:[5,5],
+
+                    tension:0.3
+                }
+
+            ]
+
+        },
+
+        options:{
+
+            responsive:true,
+
+            plugins:{
+                legend:{
+                    position:'top'
+                }
+            }
+
+        }
+
+    });
+
+    // -------------------------------------------------
+    // INTERACTIVE DROPDOWN
+    // -------------------------------------------------
+
+    document
+        .getElementById('stockSelector')
+        .addEventListener('change', function(){
+
+            const stock = this.value;
+
+            forecastChart.data.datasets[0].data =
+                forecastData[stock].actual;
+
+            forecastChart.data.datasets[1].data =
+                forecastData[stock].predicted;
+
+            forecastChart.update();
+
+        });
+
+    // -------------------------------------------------
+    // PORTFOLIO CHART
+    // -------------------------------------------------
+
+    new Chart(
+
+        document.getElementById('portfolioChart'),
+
+        {
+
+            type:'pie',
+
+            data:{
+
+                labels:[
+                    'HDFC',
+                    'ICICI',
+                    'TCS',
+                    'Infosys',
+                    'Sun Pharma',
+                    'ITC',
+                    'Maruti',
+                    'Reliance'
+                ],
+
+                datasets:[
+
+                    {
+                        data:[
+                            180000,
+                            150000,
+                            140000,
+                            120000,
+                            110000,
+                            100000,
+                            100000,
+                            100000
+                        ]
+                    }
+
+                ]
+
+            }
+
+        }
+
+    );
+
+    // -------------------------------------------------
+    // VOLATILITY
+    // -------------------------------------------------
+
+    new Chart(
+
+        document.getElementById('volatilityChart'),
+
+        {
+
+            type:'bar',
+
+            data:{
+
+                labels:[
+                    'HDFC',
+                    'ICICI',
+                    'TCS',
+                    'Infosys',
+                    'Sun Pharma',
+                    'ITC',
+                    'Maruti',
+                    'Reliance'
+                ],
+
+                datasets:[
+
+                    {
+                        label:'Volatility',
+
+                        data:[
+                            0.014,
+                            0.016,
+                            0.013,
+                            0.014,
+                            0.018,
+                            0.010,
+                            0.026,
+                            0.029
+                        ]
+                    }
+
+                ]
+
+            }
+
+        }
+
+    );
+
+    // -------------------------------------------------
+    // RMSE
+    // -------------------------------------------------
+
+    new Chart(
+
+        document.getElementById('rmseChart'),
+
+        {
+
+            type:'bar',
+
+            data:{
+
+                labels:[
+                    'HDFC',
+                    'ICICI',
+                    'TCS',
+                    'Infosys',
+                    'Sun Pharma',
+                    'ITC',
+                    'Maruti',
+                    'Reliance'
+                ],
+
+                datasets:[
+
+                    {
+                        label:'RMSE',
+
+                        data:[
+                            19.90,
+                            52.42,
+                            338.44,
+                            93.27,
+                            68.69,
+                            9.99,
+                            3072.11,
+                            80.46
+                        ]
+                    }
+
+                ]
+
+            }
+
+        }
+
+    );
+
+    // -------------------------------------------------
+    // SECTOR ALLOCATION
+    // -------------------------------------------------
+
+    new Chart(
+
+        document.getElementById('sectorChart'),
+
+        {
+
+            type:'bar',
+
+            data:{
+
+                labels:[
+                    'Banking',
+                    'IT',
+                    'Pharma',
+                    'FMCG',
+                    'Automobile',
+                    'Energy'
+                ],
+
+                datasets:[
+
+                    {
+                        label:'Investment',
+
+                        data:[
+                            330000,
+                            260000,
+                            110000,
+                            100000,
+                            100000,
+                            100000
+                        ]
+                    }
+
+                ]
+
+            }
+
+        }
+
+    );
+
+</script>
+
+</body>
+
+</html>
